@@ -46,21 +46,31 @@ qu'aucun foyer n'est initialisé et déroule la phase INIT.
 | `assets/gouts.md`, `pantry.md`, `equipement.md` | Gabarits des fichiers du foyer (préférences, garde-manger, matériel) |
 | `scripts/verify_menu.py` | Vérifieur déterministe (stdlib Python uniquement) |
 | `scripts/extract_recipe.py` | Extraction schema.org/Recipe d'une URL vers le schéma pivot |
+| `adaptateurs/` | La couche de chiffrage : vérifieurs sur données ouvertes (Agribalyse, CIQUAL, Open Food Facts), socle PrestaShop, exemple complet mon-marché.fr, digest multi-sources, rendu HTML + PDF — voir [`adaptateurs/README.md`](adaptateurs/README.md) |
+| `exemples/menu_demo.json` | Menu de démonstration au schéma pivot (essai immédiat du vérifieur et du rendu) |
 
 Aucune donnée personnelle : tous les fichiers du foyer sont des gabarits vides
 que la phase INIT remplit chez vous.
 
-## La couche adaptateurs (construite chez vous)
+## La couche adaptateurs (fournie en grande partie)
 
-Le chiffrage réel — catalogues et prix de **vos** boutiques en ligne, CO2e
-([Agribalyse](https://agribalyse.ademe.fr/)), nutrition (CIQUAL), NOVA/additifs
-([Open Food Facts](https://world.openfoodfacts.org/)) — passe par un « atelier »
-d'adaptateurs que le skill construit **avec vous** en phase INIT, boutique par
-boutique (API JSON interne, endpoints PrestaShop/Shopify, ou capture navigateur
-en dernier recours). L'atelier n'est pas distribué ici : il dépend de vos
-enseignes, et les adaptateurs sont jetables par conception — seul le schéma
-pivot est stable. Sans atelier, le skill fonctionne en mode dégradé (menus
-vérifiés, sans prix ni CO2e chiffrés).
+Le chiffrage réel passe par les adaptateurs du dossier
+[`adaptateurs/`](adaptateurs/README.md) :
+
+- **Fournis complets, prêts à l'emploi** : les vérifieurs sur données ouvertes —
+  CO2e ([Agribalyse](https://agribalyse.ademe.fr/), ADEME), nutrition
+  ([CIQUAL](https://ciqual.anses.fr/), ANSES), NOVA/additifs
+  ([Open Food Facts](https://world.openfoodfacts.org/)) — avec leurs caches,
+  l'orchestrateur de rapport `verifie_menu_v2.py`, le digest de disponibilités
+  et le rendu HTML + PDF.
+- **Fournis en exemples** : `monmarche.py` (API JSON interne complète, catalogue
+  + panier par SKU) et `prestashop.py` (socle générique `?from-xhr` pour toute
+  boutique PrestaShop 1.7). Vos autres enseignes se branchent en phase INIT sur
+  ces modèles ; les **catalogues capturés restent en local** (jamais dans git).
+
+Sans aucune boutique branchée, le skill fonctionne déjà : menus vérifiés
+(règles + CO2e + nutrition + saisonnalité), sans prix. Python stdlib
+uniquement, aucune dépendance à installer.
 
 ## Licence
 

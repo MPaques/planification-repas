@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+disponibilites.md
+*_rapport*.json
+*_livrables.html
+*_livrables.pdf
+*_crowdfarming.json
+adaptateurs/data/catalogue_*.json
+adaptateurs/data/*cache*.json

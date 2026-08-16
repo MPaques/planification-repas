@@ -1,0 +1,121 @@
+<style>{css}</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <p class="eyebrow">Planification hebdomadaire · foyer de 2</p>
+    <h1>{titre_date}</h1>
+    <p class="sub">Menu, recettes, batch cooking, courses et rapport de conformité, composés sous le
+      <b>référentiel v0.5</b> — {rampe_txt}, produits de saison. Vérifié par le pipeline v2 (règles + CO₂e Agribalyse + panier par SKU).</p>
+    <div class="tabs" role="tablist" aria-label="Vues">
+      <button class="tab active" role="tab" aria-selected="true" data-vue="semaine">La semaine</button>
+      <button class="tab" role="tab" aria-selected="false" data-vue="recettes">Recettes pas à pas</button>
+    </div>
+  </header>
+
+  <div id="vue-semaine" class="vue">
+
+  <nav class="toc" aria-label="Sommaire">
+    <a href="#menu">Menu</a>
+    <a href="#conformite">Conformité</a>
+    <a href="#batch">Batch cooking</a>
+    <a href="#courses">Liste de courses</a>
+    <a href="#crowdfarming">Approvisionnement</a>
+  </nav>
+
+  <div class="verdict {statut_cls}" role="group" aria-label="Verdict de conformité">
+    <div class="big">{statut_txt}<small>{n_regles} verdicts machine · {n_exigences} exigences suivies</small></div>
+    <div class="stats">
+      <div class="stat"><div class="n">{co2e}</div><div class="l">kg CO₂e / pers · sem</div></div>
+      <div class="stat"><div class="n">{leg}</div><div class="l">occ. légumineuses</div></div>
+      <div class="stat"><div class="n">{poisson}</div><div class="l">poissons ({gras} gras)</div></div>
+      <div class="stat"><div class="n">{viande} g</div><div class="l">viande rouge</div></div>
+      <div class="stat"><div class="n">{part_batch} %</div><div class="l">dîners issus du batch</div></div>
+    </div>
+  </div>
+
+  <section id="menu">
+    <h2>Menu de la semaine</h2>
+    <p class="lead">Sept dîners, deux déjeuners de week-end, sept petits-déjeuners et les collations. Les déjeuners de semaine sont hors périmètre.</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Jour</th><th>Petit-déjeuner</th><th>Déjeuner (week-end)</th><th>Dîner</th></tr></thead>
+        <tbody>{menu_rows}</tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="conformite">
+    <h2>Rapport de conformité <span class="k">SOR-1 · référentiel v0.5 complet</span></h2>
+    <p class="lead">Toutes les exigences du référentiel, par catégorie. Les verdicts chiffrés viennent du pipeline v2 (vérifieur v1 + Agribalyse + CIQUAL + saisonnalité + panier SKU) ; les autres règles affichent comment elles sont tenues (à la conception, par le processus, ou par relecture humaine).</p>
+    <div class="tblwrap">
+      <table>
+        <thead><tr><th>Règle</th><th>Statut</th><th>Valeur</th><th>Seuil / traitement</th></tr></thead>
+        <tbody>{conf_rows}</tbody>
+      </table>
+    </div>
+    <p class="note"><b>Lecture.</b> Sucres (SAN-7), sel (SAN-10) et oméga-3 — végétal ALA (SAN-9) et marin EPA+DHA (SAN-3) — sont chiffrés via <b>CIQUAL</b> (composition ANSES par code Ciqual). SAN-7 ne compte que les <b>sucres libres</b>. PLA-3 est vérifié contre le calendrier France du mois. SAN-6 est au niveau <b>EAT-Lancet (~50 g/j, avenant v0.5)</b>. PRX-1 (coût consommé) et SAN-11 (part bio en valeur) sont chiffrés par SKU mon-marché. Seul reste « non chiffré » : NOVA/additifs (SAN-8), contrôlé par <b>Open Food Facts</b> (code-barres) à l'achat des emballés.</p>
+  </section>
+
+  <section id="batch">
+    <h2>Plan de batch cooking <span class="k">week-end · ≤ 3 h</span></h2>
+    <p class="lead">Une séance mutualisée en parallèle (four + plaques + robot cuiseur). Les bases servent plusieurs repas ; chaque composant est affecté aux jours où il est consommé, dans sa durée de vie.</p>
+    <ol class="steps-ol">{batch_taches}</ol>
+    <p class="note"><b>Refroidissement (SEC-2)</b> : moins de 2 h avant mise au froid &lt; 4 °C, en contenants plats. Séance ~{batch_duree} min. <b>Affectations :</b> {batch_aff}</p>
+  </section>
+
+  <section id="courses">
+    <h2>Liste de courses <span class="k">mon-marché.fr · unités de vente · prix par SKU</span></h2>
+    <p class="lead">Panier chiffré produit par produit (pipeline inversé : chaque ingrédient est épinglé à un SKU du catalogue dès la planification). Le produit retenu s'affiche sous chaque ingrédient.</p>
+    <div class="rayons">{courses}</div>
+    <p class="note">{budget_txt}</p>
+  </section>
+
+  <section id="crowdfarming">
+    <h2>Approvisionnement garde-manger <span class="k">commandes pluri-semaines · optionnel</span></h2>
+    <p class="lead">Suggestions issues d'un adaptateur garde-manger optionnel (huiles, fruits à coque… — achats pluri-semaines, pas un coût hebdo). Section vide si aucun adaptateur de ce type n'est branché.</p>
+    <div class="cf-grid">
+      <div class="cf">
+        <h3>Garde-manger</h3>
+        <p class="cap">Hors saisonnalité (PLA-3 ne s'applique pas) et hors budget PRX-1 hebdo.</p>
+        {cf_gm}
+      </div>
+    </div>
+  </section>
+
+  </div><!-- /vue-semaine -->
+
+  <div id="vue-recettes" class="vue" hidden>
+    <section id="recettes">
+      <h2>Recettes pas à pas <span class="k">pour 2 · provenance affichée · SOR-2</span></h2>
+      <p class="lead">Chaque recette avec ses étapes numérotées, le produit mon-marché épinglé sous chaque ingrédient, les temps et les composants de batch. Un retour pourra être consigné dans gouts.md après cuisine (SOR-3).</p>
+      <div class="rdets">{recettes_detail}</div>
+    </section>
+  </div><!-- /vue-recettes -->
+
+  <footer>
+    <p><b>Provenance &amp; sauvegarde.</b> Recettes à provenance affichée (SOR-2) ; rien n'est conservé au corpus sans demande (SOR-3). Menu vérifié par le pipeline v2 (règles v1 + CO₂e Agribalyse 4 + CIQUAL + panier SKU). Référentiel v0.5 (SAN-6 EAT-Lancet ; dérogation PLA-3a). Semaine <code>{semaine_du}</code>.</p>
+  </footer>
+
+</div>
+
+<script>
+(function () {{
+  var tabs = document.querySelectorAll('.tab');
+  var vues = {{ semaine: document.getElementById('vue-semaine'),
+               recettes: document.getElementById('vue-recettes') }};
+  function montrer(nom) {{
+    tabs.forEach(function (t) {{
+      var actif = t.dataset.vue === nom;
+      t.classList.toggle('active', actif);
+      t.setAttribute('aria-selected', actif ? 'true' : 'false');
+    }});
+    Object.keys(vues).forEach(function (k) {{ vues[k].hidden = (k !== nom); }});
+    window.scrollTo({{ top: 0, behavior: 'auto' }});
+  }}
+  tabs.forEach(function (t) {{
+    t.addEventListener('click', function () {{ montrer(t.dataset.vue); }});
+  }});
+  if (location.hash === '#recettes') montrer('recettes');
+}})();
+</script>

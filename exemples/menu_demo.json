@@ -1,0 +1,82 @@
+{
+  "semaine_du": "2026-08-17",
+  "rampe_semaine": 1,
+  "convives": 2,
+  "recettes": {
+    "dal-corail-epinards": {
+      "id": "dal-corail-epinards",
+      "titre": "Dal de lentilles corail aux épinards",
+      "provenance": {"type": "generee", "url": null},
+      "portions_base": 2,
+      "ingredients": [
+        {"nom": "lentilles corail", "quantite": 180, "unite": "g", "categorie": "legumineuse", "bio": true, "frais_saisonnier": false},
+        {"nom": "épinards surgelés", "quantite": 300, "unite": "g", "categorie": "legume", "bio": true, "frais_saisonnier": false},
+        {"nom": "oignon", "quantite": 1, "unite": "unite", "categorie": "legume", "bio": true, "frais_saisonnier": false},
+        {"nom": "lait de coco", "quantite": 200, "unite": "ml", "categorie": "autre", "bio": true, "frais_saisonnier": false},
+        {"nom": "huile d'olive", "quantite": 15, "unite": "ml", "categorie": "matiere_grasse", "bio": true, "frais_saisonnier": false}
+      ],
+      "etapes": ["Faire revenir l'oignon, ajouter lentilles, épinards, lait de coco, mijoter 25 min."],
+      "temps": {"prep_min": 10, "cuisson_min": 25, "actif_min": 15},
+      "batch": {"batchable": true, "composants": [{"nom": "dal cuit", "famille_dlc": "legumineuses_cuites"}]},
+      "tags": {"legumineuse": true, "poisson": false, "poisson_gras": false, "viande_rouge_g": 0,
+               "charcuterie": false, "nitrites": false, "nova4": false, "portions_fl": 2,
+               "base": "legumineuse", "registre": "indien", "cg_basse": true}
+    },
+    "pates-sardines-tomate": {
+      "id": "pates-sardines-tomate",
+      "titre": "Pâtes complètes aux sardines et tomates",
+      "provenance": {"type": "generee", "url": null},
+      "portions_base": 2,
+      "ingredients": [
+        {"nom": "pâtes complètes", "quantite": 160, "unite": "g", "categorie": "cereale", "bio": true, "frais_saisonnier": false},
+        {"nom": "sardines", "quantite": 130, "unite": "g", "categorie": "poisson", "bio": false, "frais_saisonnier": false},
+        {"nom": "tomates", "quantite": 400, "unite": "g", "categorie": "legume", "bio": true, "frais_saisonnier": true},
+        {"nom": "ail", "quantite": 2, "unite": "unite", "categorie": "legume", "bio": true, "frais_saisonnier": false},
+        {"nom": "huile d'olive", "quantite": 15, "unite": "ml", "categorie": "matiere_grasse", "bio": true, "frais_saisonnier": false}
+      ],
+      "etapes": ["Cuire les pâtes al dente, ajouter la sauce tomate-ail et les sardines émiettées."],
+      "temps": {"prep_min": 10, "cuisson_min": 15, "actif_min": 15},
+      "batch": {"batchable": true, "composants": [{"nom": "sauce tomate", "famille_dlc": "soupes_sauces"}]},
+      "tags": {"legumineuse": false, "poisson": true, "poisson_gras": true, "viande_rouge_g": 0,
+               "charcuterie": false, "nitrites": false, "nova4": false, "portions_fl": 1.5,
+               "base": "cereale", "registre": "italien", "cg_basse": true}
+    },
+    "petit-dej-flocons": {
+      "id": "petit-dej-flocons",
+      "titre": "Porridge flocons d'avoine, mangue et noix",
+      "provenance": {"type": "generee", "url": null},
+      "portions_base": 2,
+      "ingredients": [
+        {"nom": "flocons d'avoine", "quantite": 100, "unite": "g", "categorie": "cereale", "bio": true, "frais_saisonnier": false},
+        {"nom": "lait", "quantite": 400, "unite": "ml", "categorie": "laitage", "bio": true, "frais_saisonnier": false},
+        {"nom": "mangue", "quantite": 200, "unite": "g", "categorie": "fruit", "bio": true, "frais_saisonnier": false},
+        {"nom": "noix", "quantite": 30, "unite": "g", "categorie": "autre", "bio": true, "frais_saisonnier": false},
+        {"nom": "champignons", "quantite": 100, "unite": "g", "categorie": "legume", "bio": true, "frais_saisonnier": false}
+      ],
+      "etapes": ["Test volontaire : mangue (fret aérien ?) et champignons (veto 3.1) pour vérifier les signaux."],
+      "temps": {"prep_min": 5, "cuisson_min": 5, "actif_min": 5},
+      "batch": {"batchable": false, "composants": []},
+      "tags": {"legumineuse": false, "poisson": false, "poisson_gras": false, "viande_rouge_g": 0,
+               "charcuterie": false, "nitrites": false, "nova4": false, "portions_fl": 1,
+               "base": "cereale", "registre": "petit-dejeuner", "cg_basse": true}
+    }
+  },
+  "repas": [
+    {"jour": "lundi", "moment": "diner", "recette_id": "dal-corail-epinards", "actif_min_assemblage": 12},
+    {"jour": "mardi", "moment": "diner", "recette_id": "pates-sardines-tomate", "actif_min_assemblage": 15},
+    {"jour": "mercredi", "moment": "diner", "recette_id": "dal-corail-epinards", "actif_min_assemblage": 10},
+    {"jour": "lundi", "moment": "petit_dejeuner", "recette_id": "petit-dej-flocons", "actif_min_assemblage": 5},
+    {"jour": "mardi", "moment": "petit_dejeuner", "recette_id": "petit-dej-flocons", "actif_min_assemblage": 5}
+  ],
+  "plan_batch": {
+    "duree_totale_min": 90,
+    "taches": [
+      {"ordre": 1, "description": "Cuire 400 g de lentilles corail (dal x2)", "duree_min": 30, "ressource": "plaques", "dependances": []},
+      {"ordre": 2, "description": "Sauce tomate-ail", "duree_min": 25, "ressource": "plaques", "dependances": []}
+    ],
+    "affectations": [
+      {"composant": "dal cuit", "famille_dlc": "legumineuses_cuites", "produit_le": "dimanche", "consomme_le": ["lundi", "mercredi"]},
+      {"composant": "sauce tomate", "famille_dlc": "soupes_sauces", "produit_le": "dimanche", "consomme_le": ["mardi"]}
+    ]
+  }
+}
