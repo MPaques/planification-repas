@@ -22,6 +22,7 @@ Usage :
 """
 
 import argparse
+import json
 import math
 import sys
 import time
@@ -35,6 +36,93 @@ BASE = "https://www.mon-marche.fr/api/search2?type=PRODUCT&modelVersion=ordinal_
 CAT = "https://www.mon-marche.fr/api/category/"
 CACHE = DOSSIER_DATA / "monmarche_cache.json"
 CATALOGUE = DOSSIER_DATA / "catalogue_monmarche.json"
+ZONE = DOSSIER_DATA / "zone_monmarche.json"
+
+# --- Contexte de zone/créneau (constat 2026-08-19) --------------------------------
+# SANS contexte, l'API répond le catalogue générique : les disponibilités ne valent
+# rien pour un créneau réel (constaté : poulet fermier bio, fromage blanc bio et
+# cerneaux de noix « disponibles » au catalogue, en RUPTURE pour 92410 / samedi matin).
+# Le contexte s'établit en ANONYME : un PATCH /api/cart/delivery2 avec une adresse
+# crée un panier (cookie) rattaché à l'entrepôt de la zone ; les recherches suivantes
+# de la même session renvoient alors les vraies disponibilités. L'adresse stockée
+# dans data/zone_monmarche.json est un POINT PUBLIC de la commune (pas l'adresse du
+# foyer) : la disponibilité se joue à l'entrepôt, pas à la rue.
+
+_SESSION = None  # urllib opener avec cookies, initialisé par session_zone()
+
+
+JOURS_SEMAINE = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+
+
+def _slot_cible(slots, creneau):
+    """Choisit le premier créneau ouvert du jour/des heures demandés (heure locale)."""
+    import datetime
+    jour_cible = JOURS_SEMAINE.index(creneau.get("jour", "samedi"))
+    h_de, h_a = creneau.get("heure_de", 7), creneau.get("heure_a", 11)
+    ouverts = []
+    for s in slots:
+        if s.get("isExcluded") or s.get("isExpired") or s.get("isFull"):
+            continue
+        debut = datetime.datetime.fromtimestamp(s["from"] / 1000)
+        if debut.weekday() == jour_cible and h_de <= debut.hour < h_a:
+            ouverts.append((s["from"], s))
+    return min(ouverts)[1] if ouverts else None
+
+
+def session_zone(verbeux=False):
+    """Ouvre une session ANONYME rattachée à la zone + au créneau de
+    data/zone_monmarche.json : GET / (cookies) → POST deliverySlots2 (créneaux)
+    → PATCH cart/delivery2 (adresse + créneau). Les recherches de la même session
+    renvoient alors les vraies disponibilités. None si le fichier manque —
+    l'appelant retombe sur le catalogue générique (dispo non fiable)."""
+    global _SESSION
+    if _SESSION is not None:
+        return _SESSION
+    if not ZONE.exists():
+        return None
+    import http.cookiejar
+    import urllib.request
+    zone = lire_json(ZONE)
+    opener = urllib.request.build_opener(
+        urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+    opener.addheaders = [("User-Agent", "Mozilla/5.0"), ("Accept", "application/json")]
+    opener.open("https://www.mon-marche.fr/", timeout=30).read(128)
+
+    def appel(url, corps, methode):
+        req = urllib.request.Request(url, data=json.dumps(corps).encode(), method=methode,
+                                     headers={"Content-Type": "application/json"})
+        with opener.open(req, timeout=30) as r:
+            return json.loads(r.read().decode("utf-8"))
+
+    adresse = zone["address"]
+    d = appel("https://www.mon-marche.fr/api/addresses/deliverySlots2",
+              {"location": adresse["location"], "postalCode":
+               adresse["addressComponents"]["postalCode"], "countryCode": "FR"}, "POST")
+    slots = [s for z in d.get("deliveryZones", []) for s in z.get("deliverySlots", [])]
+    slot = _slot_cible(slots, zone.get("creneau", {}))
+    if slot is None:
+        raise RuntimeError("mon-marché : aucun créneau ouvert pour "
+                           f"{zone.get('creneau')} — vérifier zone_monmarche.json")
+    # piège d'API : timeSlot se donne à la RACINE du corps, pas dans delivery
+    appel("https://www.mon-marche.fr/api/cart/delivery2",
+          {"delivery": {"note": "", "address": adresse}, "timeSlot": slot}, "PATCH")
+    if verbeux:
+        import datetime
+        deb = datetime.datetime.fromtimestamp(slot["from"] / 1000)
+        fin = datetime.datetime.fromtimestamp(slot["orderUntil"] / 1000)
+        print(f"Contexte mon-marché : {adresse['addressComponents']['postalCode']}, "
+              f"créneau {deb:%a %d/%m %H:%M} (commander avant {fin:%a %d/%m %H:%M})")
+    _SESSION = opener
+    return opener
+
+
+def get_json_zone(url):
+    """GET JSON dans le contexte de zone si disponible, sinon repli générique."""
+    opener = session_zone()
+    if opener is None:
+        return get_json(url)
+    with opener.open(url, timeout=30) as r:
+        return json.loads(r.read().decode("utf-8"))
 
 # rayons capturés pour la planification (le reste — entretien, bébé, alcool… — est hors périmètre)
 RAYONS_CAPTURE = ["legumes", "fruits", "viandes", "poissons", "cremerie",
@@ -105,7 +193,7 @@ def chercher(terme, cache=None):
     if cle in cache:
         return cache[cle]
     try:
-        d = get_json(BASE + terme.replace(" ", "%20"))
+        d = get_json_zone(BASE + terme.replace(" ", "%20"))
         items = [_simplifier(x) for x in (d.get("items") or [])]
     except Exception:
         items = []
@@ -184,7 +272,7 @@ def capturer_catalogue():
                 continue
             vus_slugs.add(slug)
             try:
-                d = get_json(CAT + slug)
+                d = get_json_zone(CAT + slug)
             except Exception:
                 continue
             time.sleep(0.3)
@@ -223,11 +311,20 @@ def _cout_unite(p, grammes):
         u = p.get("unite_s") or "pièce"
         q = f"~{round(p['poids_piece']*1000)} g" if p.get("poids_piece") and not p.get("unite_s") else f"1 {u}"
         return round(ip, 2), q
-    if p["type"] in ("pieceWeight", "piece") and p.get("poids_piece"):
+    # pieceWeight, piece ET arbitraryQuantity : la vente se fait par INCRÉMENTS
+    # d'une unité (aubergine ~750 g, oignons 500 g, pommes de terre 1 kg…) —
+    # constat utilisateur 2026-08-19 : « 350 g à 2,03 € » n'existe pas en rayon,
+    # on achète 1 pièce de ~750 g à 4,34 €. Ne JAMAIS prorater l'encaissé.
+    if p.get("poids_piece"):
         n = max(1, math.ceil(grammes / (p["poids_piece"] * 1000)))
-        u = p["unite_p"] if n > 1 else (p["unite_s"] or "pièce")
-        return round(n * ip, 2), f"{n} {u}"
-    if pkg:                                        # vendu au poids
+        if p.get("unite_s"):
+            u = p["unite_p"] if n > 1 else p["unite_s"]
+            q = f"{n} {u}"
+        else:
+            g_u = round(p["poids_piece"] * 1000)
+            q = f"{n} × ~{g_u} g" if n > 1 else f"1 unité (~{g_u} g)"
+        return round(n * ip, 2), q
+    if pkg:                                        # vendu au poids (sans unité définie)
         q = (f"{grammes/1000:.1f}".rstrip("0").rstrip(".") + " kg") if grammes >= 1000 else f"{round(grammes)} g"
         return round(grammes / 1000 * pkg, 2), q
     # vendu à la pièce/paquet sans prix au kilo → 1 unité
@@ -273,7 +370,7 @@ def chiffrer_courses(menu):
             if p.get("sku") and p["sku"] not in catalogue:
                 catalogue[p["sku"]] = p
     par_rayon = {r: [] for r in RAYON_ORDRE}
-    total, non_trouves = 0.0, []
+    total, non_trouves, ruptures = 0.0, [], []
     total_conso = 0.0
     agg, du_placard = _agreger(menu)
     for nom, (grammes, cat, sku) in agg.items():
@@ -285,6 +382,9 @@ def chiffrer_courses(menu):
         if not p:
             non_trouves.append(nom)
             continue
+        # rupture sur la zone/le créneau : jamais silencieux (ARB-3) — substituer
+        if p.get("dispo", 1) == 0:
+            ruptures.append(f"{nom} → {p['nom']} [{p['sku']}] indisponible sur le créneau")
         cout, q = _cout_unite(p, grammes)
         # coût consommé : prorata des grammes réellement utilisés cette semaine
         # (un pack entamé — huile, flocons, riz — s'amortit sur plusieurs semaines)
@@ -332,7 +432,7 @@ def chiffrer_courses(menu):
                        "qu'en aquaculture) ; lignes non-bio = dérogations affichées "
                        "(indisponible en bio ou hors prix)"}
     return {"par_rayon": par_rayon, "total_eur": total, "total_conso_eur": total_conso,
-            "non_trouves": non_trouves, "du_placard": du_placard,
+            "non_trouves": non_trouves, "ruptures_creneau": ruptures, "du_placard": du_placard,
             "part_bio": round(part_bio, 3),
             "prx1": prx1, "san11": san11,
             "source": "mon-marché.fr (catalogue, zone parisienne)"}

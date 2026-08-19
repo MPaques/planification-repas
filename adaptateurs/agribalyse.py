@@ -22,6 +22,7 @@ exigent un poids_g dans la table d'alias.
 
 import argparse
 import difflib
+import re
 import sys
 from pathlib import Path
 
@@ -110,8 +111,13 @@ def apparier(nom, aliments, alias):
     if exact:
         return exact[0], "alias" if entree else "exact", poids_g
 
-    mots = set(cible.split())
-    candidats = [a for a in aliments if mots <= set(a["nom_norm"].split())]
+    # tokens sans ponctuation : « haricot vert, cuit » doit contenir « vert »
+    # (sinon seule la variante sans virgule — souvent l'avion — matche)
+    def toks(s):
+        return set(re.sub(r"[^a-z0-9à-ÿ ]", " ", s).split())
+
+    mots = toks(cible)
+    candidats = [a for a in aliments if mots <= toks(a["nom_norm"])]
     if not candidats:
         candidats = [a for a in aliments if cible in a["nom_norm"]]
     if candidats:

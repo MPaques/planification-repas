@@ -64,3 +64,32 @@ py adaptateurs/rendu_semaine.py menu.json --pdf  # → HTML + PDF
 Essai immédiat sans boutique : `py adaptateurs/verifie_menu_v2.py
 exemples/menu_demo.json --verifieur scripts/verify_menu.py` puis
 `py adaptateurs/rendu_semaine.py exemples/menu_demo.json --no-run`.
+
+## Disponibilité réelle : le contexte de zone/créneau (obligatoire)
+
+Sans contexte, l'API mon-marché répond le **catalogue générique** : les
+disponibilités ne valent rien pour un créneau de livraison réel (constaté :
+des produits « disponibles » au catalogue, en rupture sur le créneau).
+Créer `data/zone_monmarche.json` :
+
+```json
+{
+ "address": {
+  "addressComponents": {"streetNumber": "1", "street": "Place de la Mairie",
+                         "city": "VotreVille", "postalCode": "75001",
+                         "country": "France", "countryCode": "FR"},
+  "formattedAddress": "1 Place de la Mairie, 75001 VotreVille, France",
+  "location": {"lat": 48.85, "lng": 2.35}
+ },
+ "creneau": {"jour": "samedi", "heure_de": 7, "heure_a": 11}
+}
+```
+
+Utiliser un **point public** de votre commune (mairie), jamais l'adresse du
+foyer : la disponibilité se joue à l'entrepôt de zone. `monmarche.py` ouvre
+alors une session anonyme (adresse + créneau) avant toute capture/recherche,
+et `chiffrer_courses` remonte les `ruptures_creneau`. Pièges d'API encodés
+dans le module : `timeSlot` à la racine du corps du PATCH ; les produits
+`arbitraryQuantity` se vendent par **incréments d'une unité** (une aubergine
+~750 g), jamais au prorata des grammes. Supprimer `data/monmarche_cache.json`
+après tout changement de zone.
